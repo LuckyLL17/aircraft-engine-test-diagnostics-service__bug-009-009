@@ -24,6 +24,15 @@ npm start
 - `POST /v1/root-cause/infer`：生成根因排序与解释链
 - `POST /v1/life/estimate`：执行剩余寿命不确定性推演
 
+### 综合分析的成败语义
+
+`/v1/test-runs/analyze` 按依赖顺序推进八个阶段：回放 → 校准 → 分段 → 性能 → 振动 → 健康 → 根因 → 寿命（未提供 `life` 输入时跳过）。每个阶段在一次运行中只提交一次，失败不会触发重算或回填。
+
+- 成功：HTTP 200，响应含 `status: "completed"` 与 `stages.completed` / `stages.skipped`，可逐项核对哪些阶段真实完成。
+- 失败：HTTP 4xx/5xx，`error.code` 为 `ANALYSIS_STAGE_FAILED`，`error.details` 包含失败阶段 `stage`、已提交阶段 `completedStages`、原始错误 `cause`（保留领域错误码与明细）以及已完成阶段的上下文快照 `completedContext`（未提交的阶段为 `null`）。
+
+每次调用都是独立运行：调用方修正输入后重试会从初始健康状态和原始遥测重新完整推进，不会叠加上一轮的部分结果。
+
 ## 目录
 
 - `src/domain/timeline`：事件校验、确定性重放和时间线索引
