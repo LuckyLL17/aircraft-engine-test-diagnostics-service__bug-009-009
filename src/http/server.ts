@@ -24,6 +24,10 @@ function send(response: ServerResponse, status: number, payload: unknown): void 
   response.end(JSON.stringify(payload));
 }
 
+function firstHeader(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 export function createServer() {
   return createHttpServer(async (request, response) => {
     try {
@@ -32,7 +36,9 @@ export function createServer() {
       if (request.method !== 'POST') return send(response, 405, { error: { code: 'METHOD_NOT_ALLOWED', message: 'Use POST for diagnostic endpoints' } });
       const input = await readBody(request);
       const handlers: Record<string, () => unknown> = {
-        '/v1/test-runs/analyze': () => diagnosticService.analyze(input),
+        '/v1/test-runs/analyze': () => diagnosticService.analyze(input, {
+          idempotencyKey: firstHeader(request.headers['idempotency-key']),
+        }),
         '/v1/timeline/replay': () => diagnosticService.replay(input.events ?? []),
         '/v1/performance/evaluate': () => diagnosticService.performance(input),
         '/v1/vibration/diagnose': () => diagnosticService.vibration(input.evidence ?? [], input.prior),

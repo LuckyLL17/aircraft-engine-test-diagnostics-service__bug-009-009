@@ -16,7 +16,7 @@ npm start
 ## API
 
 - `GET /health`
-- `POST /v1/test-runs/analyze`：执行完整试车分析流程
+- `POST /v1/test-runs/analyze`：按重放、校准、分段、性能、振动、健康、根因、寿命的依赖顺序执行完整试车分析。成功响应包含 `status: "succeeded"` 与每个阶段的一次性提交回执；失败时返回 4xx/5xx，并在 `error.details.failedStage`、`originalError`、`completedStages`、`completedContext` 和 `partialReport` 中保留失败点、原始错误及已完成上下文。重试应携带相同的 `Idempotency-Key`；在当前服务进程内，相同请求会复用成功报告或从未完成阶段恢复，不同请求体不能复用同一键。遥测 `runId` 只能被一次成功提交消费。
 - `POST /v1/timeline/replay`：按采样时间重放多通道遥测
 - `POST /v1/performance/evaluate`：计算发动机热力性能快照
 - `POST /v1/vibration/diagnose`：融合振动证据并输出故障候选
